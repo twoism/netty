@@ -78,11 +78,11 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
 
             final ByteBufAllocator allocator = config.getAllocator();
             final int maxMessagesPerRead = config.getMaxMessagesPerRead();
-            final MessageList<ByteBuf> messages = MessageList.newInstance();
 
             boolean closed = false;
             Throwable exception = null;
             ByteBuf byteBuf = null;
+            int messages = 0;
             try {
                 for (;;) {
                     byteBuf = allocHandle.allocate(allocator);
@@ -99,10 +99,10 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
                         break;
                     }
 
-                    messages.add(byteBuf);
+                    pipeline.fireMessageReceived(byteBuf);
                     allocHandle.record(localReadAmount);
                     byteBuf = null;
-                    if (messages.size() == maxMessagesPerRead) {
+                    if (++ messages == maxMessagesPerRead) {
                         break;
                     }
                 }
@@ -111,13 +111,15 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
             } finally {
                 if (byteBuf != null) {
                     if (byteBuf.isReadable()) {
-                        messages.add(byteBuf);
+                        pipeline.fireMessageReceived(byteBuf);
                     } else {
                         byteBuf.release();
                     }
                 }
 
-                pipeline.fireMessageReceived(messages);
+                if (messages != 0) {
+                    pipeline.fireMessageReceivedLast();
+                }
 
                 if (exception != null) {
                     if (exception instanceof IOException) {
