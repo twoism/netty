@@ -240,13 +240,8 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
     }
 
     @Override
-    public ChannelFuture write(Object msg) {
-        return pipeline.write(msg);
-    }
-
-    @Override
-    public ChannelFuture write(MessageList<?> msgs) {
-        return pipeline.write(msgs);
+    public ChannelFuture flush() {
+        return pipeline.flush();
     }
 
     @Override
@@ -285,13 +280,14 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
     }
 
     @Override
-    public ChannelFuture write(Object msg, ChannelPromise promise) {
-        return pipeline.write(msg, promise);
+    public Channel write(Object msg) {
+        pipeline.write(msg);
+        return this;
     }
 
     @Override
-    public ChannelFuture write(MessageList<?> msgs, ChannelPromise promise) {
-        return pipeline.write(msgs, promise);
+    public ChannelFuture flush(ChannelPromise promise) {
+        return pipeline.flush(promise);
     }
 
     @Override
@@ -399,14 +395,6 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
      * {@link Unsafe} implementation which sub-classes must extend and use.
      */
     protected abstract class AbstractUnsafe implements Unsafe {
-
-        private final Runnable flushLaterTask = new Runnable() {
-            @Override
-            public void run() {
-                flushNowPending = false;
-                flush();
-            }
-        };
 
         @Override
         public final SocketAddress localAddress() {
@@ -637,12 +625,14 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
         }
 
         @Override
-        public void write(MessageList<?> msgs, ChannelPromise promise) {
-            outboundBuffer.add(msgs, promise);
-            flush();
+        public void write(Object msg) {
+            outboundBuffer.addMessage(msg);
         }
 
-        private void flush() {
+        @Override
+        public void flush(final ChannelPromise promise) {
+            outboundBuffer.addPromise(promise);
+
             if (!inFlushNow) { // Avoid re-entrance
                 try {
                     // Flush immediately only when there's no pending flush.
@@ -658,7 +648,12 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
             } else {
                 if (!flushNowPending) {
                     flushNowPending = true;
-                    eventLoop().execute(flushLaterTask);
+                    eventLoop().execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            flush(promise);
+                        }
+                    });
                 }
             }
         }
@@ -695,12 +690,9 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                     }
 
                     MessageList<Object> messages = outboundBuffer.currentMessages;
-                    int messageIndex = outboundBuffer.currentMessageIndex;
-                    int messageCount = messages.size();
 
                     // Make sure the message list is not empty.
-                    if (messageCount == 0) {
-                        messages.recycle();
+                    if (messages == null) {
                         promise.trySuccess();
                         if (!outboundBuffer.next()) {
                             break;
@@ -708,6 +700,9 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                             continue;
                         }
                     }
+
+                    int messageIndex = outboundBuffer.currentMessageIndex;
+                    int messageCount = messages.size();
 
                     // Make sure the promise has not been cancelled.
                     if (promise.isCancelled()) {

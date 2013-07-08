@@ -782,8 +782,25 @@ final class DefaultChannelPipeline implements ChannelPipeline {
     }
 
     @Override
+    public ChannelPipeline fireMessageReceivedLast() {
+        head.fireMessageReceivedLast();
+        return this;
+    }
+    
+    @Override
     public ChannelPipeline fireMessageReceived(MessageList<?> msgs) {
-        head.fireMessageReceived(msgs);
+        if (msgs == null) {
+            throw new NullPointerException("msgs");
+        }
+        
+        final int size = msgs.size();
+        final Object[] array = msgs.array();
+        for (int i = 0; i < size; i ++) {
+            head.fireMessageReceived(array[i]);
+        }
+        
+        head.fireMessageReceivedLast();
+        
         return this;
     }
 
@@ -833,13 +850,8 @@ final class DefaultChannelPipeline implements ChannelPipeline {
     }
 
     @Override
-    public ChannelFuture write(Object msg) {
-        return tail.write(msg);
-    }
-
-    @Override
-    public ChannelFuture write(MessageList<?> msgs) {
-        return tail.write(msgs);
+    public ChannelFuture flush() {
+        return tail.flush();
     }
 
     @Override
@@ -878,13 +890,23 @@ final class DefaultChannelPipeline implements ChannelPipeline {
     }
 
     @Override
-    public ChannelFuture write(Object msg, ChannelPromise promise) {
-        return tail.write(msg, promise);
+    public ChannelPipeline write(Object msg) {
+        tail.write(msg);
+        return this;
+    }
+    
+    public ChannelFuture write(MessageList<Object> msgs) {
+        final int size = msgs.size();
+        final Object[] array = msgs.array();
+        for (int i = 0; i < size; i ++) {
+            write(array[i]);
+        }
+        return flush();
     }
 
     @Override
-    public ChannelFuture write(MessageList<?> msgs, ChannelPromise promise) {
-        return tail.write(msgs, promise);
+    public ChannelFuture flush(ChannelPromise promise) {
+        return tail.flush(promise);
     }
 
     private void checkDuplicateName(String name) {
@@ -958,27 +980,18 @@ final class DefaultChannelPipeline implements ChannelPipeline {
         }
 
         @Override
-        public void messageReceived(ChannelHandlerContext ctx, MessageList<Object> msgs) throws Exception {
-            int length = msgs.size();
-            if (length == 0) {
-                return;
-            }
-
-            for (int i = 0; i < length; i ++) {
-                Object m = msgs.get(i);
+        public void messageReceived(ChannelHandlerContext ctx, Object msg) throws Exception {
+            try {
                 logger.debug(
                         "Discarded inbound message {} that reached at the tail of the pipeline. " +
-                                "Please check your pipeline configuration.", m);
-
-                ReferenceCountUtil.release(m);
-            }
-
-            if (length != 1) {
-                logger.warn(
-                        "Discarded {} inbound message(s) that reached at the tail of the pipeline. " +
-                        "Please check your pipeline configuration.", length);
+                                "Please check your pipeline configuration.", msg);
+            } finally {
+                ReferenceCountUtil.release(msg);
             }
         }
+
+        @Override
+        public void messageReceivedLast(ChannelHandlerContext ctx) throws Exception { }
     }
 
     static final class HeadHandler implements ChannelOutboundHandler {
@@ -1035,9 +1048,13 @@ final class DefaultChannelPipeline implements ChannelPipeline {
         }
 
         @Override
-        public void write(
-                ChannelHandlerContext ctx, MessageList<Object> msgs, ChannelPromise promise) throws Exception {
-            unsafe.write(msgs, promise);
+        public void write(ChannelHandlerContext ctx, Object msg) throws Exception {
+            unsafe.write(msg);
+        }
+
+        @Override
+        public void flush(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
+            unsafe.flush(promise);
         }
 
         @Override

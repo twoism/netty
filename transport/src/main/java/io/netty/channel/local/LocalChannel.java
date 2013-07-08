@@ -258,6 +258,7 @@ public class LocalChannel extends AbstractChannel {
                     if (received == null) {
                         break;
                     }
+                    
                     pipeline.fireMessageReceived(received);
                 }
                 pipeline.fireChannelReadSuspended();

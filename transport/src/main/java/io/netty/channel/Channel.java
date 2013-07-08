@@ -152,6 +152,9 @@ public interface Channel extends AttributeMap, ChannelOutboundInvoker, ChannelPr
      */
     boolean isWritable();
 
+    @Override
+    Channel write(Object msg);
+
     /**
      * Returns an <em>internal-use-only</em> object that provides unsafe operations.
      */
@@ -236,10 +239,15 @@ public interface Channel extends AttributeMap, ChannelOutboundInvoker, ChannelPr
         /**
          * Schedules a write operation.
          */
-        void write(MessageList<?> msgs, ChannelPromise promise);
+        void write(Object msg);
 
         /**
-         * Flush out all data now.
+         * Flush out all scheduled writes.
+         */
+        void flush(ChannelPromise promise);
+
+        /**
+         * Flush out all schedules writes immediately.
          */
         void flushNow();
 

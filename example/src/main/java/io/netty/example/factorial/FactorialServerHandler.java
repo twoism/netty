@@ -17,7 +17,6 @@ package io.netty.example.factorial;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.MessageList;
 
 import java.math.BigInteger;
 import java.util.Formatter;
@@ -40,29 +39,22 @@ public class FactorialServerHandler extends ChannelInboundHandlerAdapter {
     private BigInteger factorial = new BigInteger("1");
 
     @Override
-    public void messageReceived(
-            ChannelHandlerContext ctx, MessageList<Object> msgs) throws Exception {
-        MessageList<BigInteger> ints = msgs.cast();
-        for (int i = 0; i < ints.size(); i++) {
-            BigInteger msg = ints.get(i);
-            // Calculate the cumulative factorial and send it to the client.
-            lastMultiplier = msg;
-            factorial = factorial.multiply(msg);
-            ctx.write(factorial);
-        }
-        msgs.recycle();
+    public void messageReceived(ChannelHandlerContext ctx, Object msg) throws Exception {
+        BigInteger i = (BigInteger) msg;
+        // Calculate the cumulative factorial and send it to the client.
+        lastMultiplier = i;
+        factorial = factorial.multiply(i);
+        ctx.write(factorial).flush();
     }
 
     @Override
-    public void channelInactive(
-            ChannelHandlerContext ctx) throws Exception {
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         logger.info(new Formatter().format(
                 "Factorial of %,d is: %,d", lastMultiplier, factorial).toString());
     }
 
     @Override
-    public void exceptionCaught(
-            ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         logger.log(
                 Level.WARNING,
                 "Unexpected exception from downstream.", cause);

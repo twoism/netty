@@ -99,12 +99,7 @@ interface ChannelOutboundInvoker {
      */
     ChannelFuture deregister();
 
-    /**
-     * Request to write a message via this ChannelOutboundInvoker and notify the {@link ChannelFuture}
-     * once the operation completes, either because the operation was successful or because of an error.
-     */
-    ChannelFuture write(Object msg);
-    ChannelFuture write(MessageList<?> msgs);
+    ChannelFuture flush();
 
     /**
      * Request to bind to the given {@link SocketAddress} and notify the {@link ChannelFuture} once the operation
@@ -211,6 +206,7 @@ interface ChannelOutboundInvoker {
      * Request to write a message via this ChannelOutboundInvoker and notify the {@link ChannelFuture}
      * once the operation completes, either because the operation was successful or because of an error.
      */
-    ChannelFuture write(Object msg, ChannelPromise promise);
-    ChannelFuture write(MessageList<?> msgs, ChannelPromise promise);
+    ChannelOutboundInvoker write(Object msg);
+
+    ChannelFuture flush(ChannelPromise promise);
 }

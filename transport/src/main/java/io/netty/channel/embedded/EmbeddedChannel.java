@@ -164,9 +164,14 @@ public class EmbeddedChannel extends AbstractChannel {
         if (msgs.length == 0) {
             return !lastOutboundBuffer.isEmpty();
         }
-        MessageList<Object> list = MessageList.newInstance(msgs.length);
-        list.add(msgs);
-        ChannelFuture future = write(list);
+
+        for (Object m: msgs) {
+            if (m == null) {
+                break;
+            }
+            write(m);
+        }
+        ChannelFuture future = flush();
         assert future.isDone();
         if (future.cause() != null) {
             recordException(future.cause());
@@ -305,12 +310,8 @@ public class EmbeddedChannel extends AbstractChannel {
 
     private final class LastInboundHandler extends ChannelInboundHandlerAdapter {
         @Override
-        public void messageReceived(ChannelHandlerContext ctx, MessageList<Object> msgs) throws Exception {
-            int size = msgs.size();
-            for (int i = 0; i < size; i ++) {
-                lastInboundBuffer.add(msgs.get(i));
-            }
-            msgs.recycle();
+        public void messageReceived(ChannelHandlerContext ctx, Object msg) throws Exception {
+            lastInboundBuffer.add(msg);
         }
 
         @Override

@@ -25,7 +25,8 @@ import java.net.SocketAddress;
  * <ul>
  * <li>{@link #connect(SocketAddress, ChannelPromise)}</li>
  * <li>{@link #disconnect(ChannelPromise)}</li>
- * <li>{@link ChannelOutboundInvoker#write(Object, ChannelPromise)}</li>
+ * <li>{@link #write(Object)}</li>
+ * <li>{@link #flush(ChannelPromise)}</li>
  * <li>and the shortcut methods which calls the methods mentioned above
  * </ul>
  */
@@ -77,12 +78,13 @@ public abstract class AbstractServerChannel extends AbstractChannel implements S
 
     private final class DefaultServerUnsafe extends AbstractUnsafe {
         @Override
-        public void write(MessageList<?> msgs, ChannelPromise promise) {
+        public void write(Object msg) {
+            ReferenceCountUtil.release(msg);
+        }
+
+        @Override
+        public void flush(ChannelPromise promise) {
             reject(promise);
-            int size = msgs.size();
-            for (int i = 0; i < size; i ++) {
-                ReferenceCountUtil.release(msgs.get(i));
-            }
         }
 
         @Override

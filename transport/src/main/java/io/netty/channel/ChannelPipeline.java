@@ -132,7 +132,8 @@ import java.util.NoSuchElementException;
  *     <ul>
  *     <li>{@link ChannelHandlerContext#fireChannelRegistered()}</li>
  *     <li>{@link ChannelHandlerContext#fireChannelActive()}</li>
- *     <li>{@link ChannelHandlerContext#fireMessageReceived(MessageList)}</li>
+ *     <li>{@link ChannelHandlerContext#fireMessageReceived(Object)}</li>
+ *     <li>{@link ChannelHandlerContext#fireMessageReceivedLast()}</li>
  *     <li>{@link ChannelHandlerContext#fireExceptionCaught(Throwable)}</li>
  *     <li>{@link ChannelHandlerContext#fireUserEventTriggered(Object)}</li>
  *     <li>{@link ChannelHandlerContext#fireChannelReadSuspended()}</li>
@@ -145,7 +146,8 @@ import java.util.NoSuchElementException;
  *     <ul>
  *     <li>{@link ChannelHandlerContext#bind(SocketAddress, ChannelPromise)}</li>
  *     <li>{@link ChannelHandlerContext#connect(SocketAddress, SocketAddress, ChannelPromise)}</li>
- *     <li>{@link ChannelHandlerContext#write(MessageList)}</li>
+ *     <li>{@link ChannelHandlerContext#write(Object)}</li>
+ *     <li>{@link ChannelHandlerContext#flush(ChannelPromise)}</li>
  *     <li>{@link ChannelHandlerContext#read()}</li>
  *     <li>{@link ChannelHandlerContext#disconnect(ChannelPromise)}</li>
  *     <li>{@link ChannelHandlerContext#close(ChannelPromise)}</li>
@@ -615,6 +617,8 @@ public interface ChannelPipeline
     ChannelPipeline fireMessageReceived(Object msg);
 
     @Override
+    ChannelPipeline fireMessageReceivedLast();
+
     ChannelPipeline fireMessageReceived(MessageList<?> msgs);
 
     @Override
@@ -622,4 +626,9 @@ public interface ChannelPipeline
 
     @Override
     ChannelPipeline fireChannelWritabilityChanged();
+
+    @Override
+    ChannelPipeline write(Object msg);
+    
+    ChannelFuture write(MessageList<Object> msgs);
 }

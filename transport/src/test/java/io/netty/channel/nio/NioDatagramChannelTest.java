@@ -23,6 +23,7 @@ import io.netty.channel.MessageList;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
+import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import org.junit.Assert;
 import org.junit.Test;
@@ -46,9 +47,9 @@ public class NioDatagramChannelTest {
                         .option(ChannelOption.SO_BROADCAST, true)
                         .handler(new ChannelInboundHandlerAdapter() {
                             @Override
-                            public void messageReceived(ChannelHandlerContext ctx, MessageList<Object> msgs) {
+                            public void messageReceived(ChannelHandlerContext ctx, Object msg) {
                                 // Discard
-                                msgs.releaseAllAndRecycle();
+                                ReferenceCountUtil.release(msg);
                             }
                         });
                 DatagramChannel datagramChannel = (DatagramChannel) udpBootstrap
