@@ -17,6 +17,7 @@ package io.netty.channel.group;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufHolder;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -108,13 +109,26 @@ public interface ChannelGroup extends Set<Channel>, Comparable<ChannelGroup> {
      * group. If the specified {@code message} is an instance of
      * {@link ByteBuf}, it is automatically
      * {@linkplain ByteBuf#duplicate() duplicated} to avoid a race
-     * condition. Please note that this operation is asynchronous as
+     * condition. The same is true for {@link ByteBufHolder}. Please note that this operation is asynchronous as
      * {@link Channel#write(Object)} is.
      *
      * @return the {@link ChannelGroupFuture} instance that notifies when
      *         the operation is done for all channels
      */
     ChannelGroupFuture write(Object message);
+
+    /**
+     * Writes the specified {@code message} to all {@link Channel}s in this
+     * group that match the given {@link ChannelGroupMatcher}. If the specified {@code message} is an instance of
+     * {@link ByteBuf}, it is automatically
+     * {@linkplain ByteBuf#duplicate() duplicated} to avoid a race
+     * condition. The same is true for {@link ByteBufHolder}. Please note that this operation is asynchronous as
+     * {@link Channel#write(Object)} is.
+     *
+     * @return the {@link ChannelGroupFuture} instance that notifies when
+     *         the operation is done for all channels
+     */
+    ChannelGroupFuture write(Object message, ChannelGroupMatcher processor);
 
     /**
      * Writes the specified {@code messages} to all {@link Channel}s in this
@@ -130,12 +144,34 @@ public interface ChannelGroup extends Set<Channel>, Comparable<ChannelGroup> {
     ChannelGroupFuture write(MessageList<Object> messages);
 
     /**
+     * Writes the specified {@code messages} to all {@link Channel}s in this
+     * group that match the given {@link ChannelGroupMatcher}. If the specified {@code messages} are an instance of
+     * {@link ByteBuf}, it is automatically
+     * {@linkplain ByteBuf#duplicate() duplicated} to avoid a race
+     * condition. Please note that this operation is asynchronous as
+     * {@link Channel#write(Object)} is.
+     *
+     * @return the {@link ChannelGroupFuture} instance that notifies when
+     *         the operation is done for all channels
+     */
+    ChannelGroupFuture write(MessageList<Object> messages, ChannelGroupMatcher matcher);
+
+    /**
      * Disconnects all {@link Channel}s in this group from their remote peers.
      *
      * @return the {@link ChannelGroupFuture} instance that notifies when
      *         the operation is done for all channels
      */
     ChannelGroupFuture disconnect();
+
+    /**
+     * Disconnects all {@link Channel}s in this group from their remote peers,
+     * that match the given {@link ChannelGroupMatcher}.
+     *
+     * @return the {@link ChannelGroupFuture} instance that notifies when
+     *         the operation is done for all channels
+     */
+    ChannelGroupFuture disconnect(ChannelGroupMatcher matcher);
 
     /**
      * Closes all {@link Channel}s in this group.  If the {@link Channel} is
@@ -148,6 +184,16 @@ public interface ChannelGroup extends Set<Channel>, Comparable<ChannelGroup> {
     ChannelGroupFuture close();
 
     /**
+     * Closes all {@link Channel}s in this group that match the given {@link ChannelGroupMatcher}.
+     * If the {@link Channel} is  connected to a remote peer or bound to a local address, it is
+     * automatically disconnected and unbound.
+     *
+     * @return the {@link ChannelGroupFuture} instance that notifies when
+     *         the operation is done for all channels
+     */
+    ChannelGroupFuture close(ChannelGroupMatcher matcher);
+
+    /**
      * Deregister all {@link Channel}s in this group from their {@link EventLoop}.
      * Please note that this operation is asynchronous as {@link Channel#deregister()} is.
      *
@@ -155,4 +201,13 @@ public interface ChannelGroup extends Set<Channel>, Comparable<ChannelGroup> {
      *         the operation is done for all channels
      */
     ChannelGroupFuture deregister();
+
+    /**
+     * Deregister all {@link Channel}s in this group from their {@link EventLoop} that match the given
+     * {@link ChannelGroupMatcher}. Please note that this operation is asynchronous as {@link Channel#deregister()} is.
+     *
+     * @return the {@link ChannelGroupFuture} instance that notifies when
+     *         the operation is done for all channels
+     */
+    ChannelGroupFuture deregister(ChannelGroupMatcher matcher);
 }
