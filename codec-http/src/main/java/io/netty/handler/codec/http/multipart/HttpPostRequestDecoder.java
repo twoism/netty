@@ -266,14 +266,28 @@ public class HttpPostRequestDecoder {
         if (headerContentType[0].toLowerCase().startsWith(HttpHeaders.Values.MULTIPART_FORM_DATA)
                 && headerContentType[1].toLowerCase().startsWith(HttpHeaders.Values.BOUNDARY)) {
             String[] boundary = StringUtil.split(headerContentType[1], '=');
-            if (boundary.length != 2) {
+
+            if (boundary.length < 2) {
                 throw new ErrorDataDecoderException("Needs a boundary value");
             }
-            multipartDataBoundary = "--" + boundary[1];
+
+            multipartDataBoundary = "--" + extractFirstBoundary(boundary[1]);
             isMultipart = true;
             currentStatus = MultiPartStatus.HEADERDELIMITER;
         } else {
             isMultipart = false;
+        }
+    }
+
+    private String extractFirstBoundary(String boundary) {
+        final boolean hasMultipleBoundaries = boundary.indexOf(";") != -1;
+
+        if (hasMultipleBoundaries) {
+            String firstBoundary = StringUtil.split(boundary, ';')[0];
+
+            return StringUtil.trimQuotes(firstBoundary);
+        } else {
+            return StringUtil.trimQuotes(boundary);
         }
     }
 

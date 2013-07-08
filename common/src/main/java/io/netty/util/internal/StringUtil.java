@@ -42,6 +42,19 @@ public final class StringUtil {
         NEWLINE = newLine;
     }
 
+    /**
+     * Trims leading and trailing quotes from the specified {@link String}.
+     */
+    public static String trimQuotes(String value) {
+        final boolean isQuoted = value.indexOf("\"") == 0 && value.lastIndexOf("\"") == value.length() - 1;
+
+        if (isQuoted) {
+            return value.substring(1, value.length()-1);
+        } else {
+            return value;
+        }
+    }
+
     private static final String EMPTY_STRING = "";
 
     /**
