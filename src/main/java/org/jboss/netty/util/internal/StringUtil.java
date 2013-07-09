@@ -28,6 +28,19 @@ public final class StringUtil {
         // Unused.
     }
 
+    /**
+     * Trims leading and trailing quotes from the specified {@link String}.
+     */
+    public static String trimQuotes(String value) {
+        final boolean isQuoted = value.indexOf("\"") == 0 && value.lastIndexOf("\"") == value.length() - 1;
+
+        if (isQuoted) {
+            return value.substring(1, value.length()-1);
+        } else {
+            return value;
+        }
+    }
+
     public static final String NEWLINE;
 
     static {

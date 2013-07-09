@@ -70,4 +70,86 @@ public class HttpPostRequestDecoderTest {
                 data.getBytes(), upload.get());
         }
     }
+
+    @Test
+    public void testHttpRequestUploadWithQuotedBoundary() throws Exception {
+        final String boundary = "dLV9Wyq26L_-JQxk6ferf-RT153LhOO";
+
+        final DefaultHttpRequest req = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST, "http://localhost");
+
+        req.setContent(ChannelBuffers.EMPTY_BUFFER);
+        req.setHeader(HttpHeaders.Names.CONTENT_TYPE, "multipart/form-data; boundary=\"" + boundary + "\"");
+        req.setHeader(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
+        req.setChunked(true);
+
+        // Force to use memory-based data.
+        final DefaultHttpDataFactory inMemoryFactory = new DefaultHttpDataFactory(false);
+
+        for (String data : Arrays.asList("", "\r", "\r\r", "\r\r\r")) {
+            final String body =
+                    "--" + boundary + "\r\n" +
+                            "Content-Disposition: form-data; name=\"file\"; filename=\"tmp-0.txt\"\r\n" +
+                            "Content-Type: image/gif\r\n" +
+                            "\r\n" +
+                            data + "\r\n" +
+                            "--" + boundary + "--\r\n";
+
+            // Create decoder instance to test.
+            final HttpPostRequestDecoder decoder = new HttpPostRequestDecoder(inMemoryFactory, req);
+
+            decoder.offer(new DefaultHttpChunk(ChannelBuffers.copiedBuffer(body, CharsetUtil.UTF_8)));
+            decoder.offer(new DefaultHttpChunk(ChannelBuffers.EMPTY_BUFFER));
+
+            // Validate it's enough chunks to decode upload.
+            assertTrue(decoder.hasNext());
+
+            // Decode binary upload.
+            MemoryFileUpload upload = (MemoryFileUpload) decoder.next();
+
+            // Validate data has been parsed correctly as it was passed into request.
+            assertArrayEquals("Invalid decoded data [data=" + data + "upload=" + upload + ']',
+                    data.getBytes(), upload.get());
+        }
+    }
+
+    @Test
+    public void testFullHttpRequestUploadWithDoubleBoundary() throws Exception {
+        final String boundary = "dLV9Wyq26L_-JQxk6ferf-RT153LhOO";
+
+        final DefaultHttpRequest req = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST, "http://localhost");
+
+        req.setContent(ChannelBuffers.EMPTY_BUFFER);
+        req.setHeader(HttpHeaders.Names.CONTENT_TYPE, "multipart/form-data; boundary=\"" + boundary + "\"; boundary=double_boundary");
+        req.setHeader(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
+        req.setChunked(true);
+
+        // Force to use memory-based data.
+        final DefaultHttpDataFactory inMemoryFactory = new DefaultHttpDataFactory(false);
+
+        for (String data : Arrays.asList("", "\r", "\r\r", "\r\r\r")) {
+            final String body =
+                    "--" + boundary + "\r\n" +
+                            "Content-Disposition: form-data; name=\"file\"; filename=\"tmp-0.txt\"\r\n" +
+                            "Content-Type: image/gif\r\n" +
+                            "\r\n" +
+                            data + "\r\n" +
+                            "--" + boundary + "--\r\n";
+
+            // Create decoder instance to test.
+            final HttpPostRequestDecoder decoder = new HttpPostRequestDecoder(inMemoryFactory, req);
+
+            decoder.offer(new DefaultHttpChunk(ChannelBuffers.copiedBuffer(body, CharsetUtil.UTF_8)));
+            decoder.offer(new DefaultHttpChunk(ChannelBuffers.EMPTY_BUFFER));
+
+            // Validate it's enough chunks to decode upload.
+            assertTrue(decoder.hasNext());
+
+            // Decode binary upload.
+            MemoryFileUpload upload = (MemoryFileUpload) decoder.next();
+
+            // Validate data has been parsed correctly as it was passed into request.
+            assertArrayEquals("Invalid decoded data [data=" + data + "upload=" + upload + ']',
+                    data.getBytes(), upload.get());
+        }
+    }
 }
