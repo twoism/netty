@@ -72,7 +72,7 @@ public class HttpPostRequestDecoderTest {
     }
 
     @Test
-    public void testHttpRequestUploadWithQuotedBoundary() throws Exception {
+    public void testHttpRequestUploadWithQuotedBoundaryAndNoContentType() throws Exception {
         final String boundary = "dLV9Wyq26L_-JQxk6ferf-RT153LhOO";
 
         final DefaultHttpRequest req = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST, "http://localhost");
@@ -89,7 +89,6 @@ public class HttpPostRequestDecoderTest {
             final String body =
                     "--" + boundary + "\r\n" +
                             "Content-Disposition: form-data; name=\"file\"; filename=\"tmp-0.txt\"\r\n" +
-                            "Content-Type: image/gif\r\n" +
                             "\r\n" +
                             data + "\r\n" +
                             "--" + boundary + "--\r\n";
@@ -119,7 +118,6 @@ public class HttpPostRequestDecoderTest {
         final DefaultHttpRequest req = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST, "http://localhost");
 
         req.setContent(ChannelBuffers.EMPTY_BUFFER);
-        // content-type: multipart/form-data; boundary=0xN0b0dy_lik3s_a_mim3__AKhSmhMrH,multipart/form-data; boundary=com.aTeBiTs.TwEeTiE.oeunht43353r4cg345nt
         req.setHeader(HttpHeaders.Names.CONTENT_TYPE,
                 "multipart/form-data; boundary=0xN0b0dy_lik3s_a_mim3__AKhSmhMrH,multipart/form-data; boundary=" + boundary);
         req.setHeader(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);

@@ -104,4 +104,18 @@ public class StringUtilTest {
     public void splitWithDelimiterAtBeginning() {
         assertArrayEquals(new String[] { "", "foo", "bar" }, StringUtil.split("#foo#bar", '#'));
     }
+
+    @Test
+    public void trimsQuotedStrings() {
+        final String string = "thestring";
+        final String trimmed = StringUtil.trimQuotes("\"" + string + "\"");
+        assertEquals("The quotes should be trimmed", string, trimmed);
+    }
+
+    @Test
+    public void doesNotTrimUnquotedStrings() {
+        final String string = "thestring";
+        final String trimmed = StringUtil.trimQuotes(string);
+        assertEquals("The string should be unchanged", string, trimmed);
+    }
 }
