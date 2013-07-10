@@ -1131,21 +1131,23 @@ public class HttpPostRequestDecoder {
             }
         }
         if (currentFileUpload == null) {
-            String contentType = HttpHeaders.Values.MULTIPART_FORM_DATA;
+            Attribute contentTypeAttribute;
+
+            // If no content type was set default to multipart/form-data
+            if (currentFieldAttributes.containsKey(HttpHeaders.Names.CONTENT_TYPE)) {
+                contentTypeAttribute = currentFieldAttributes
+                        .get(HttpHeaders.Names.CONTENT_TYPE);
+            } else {
+                contentTypeAttribute = factory
+                        .createAttribute(request,
+                                HttpHeaders.Names.CONTENT_TYPE,
+                                HttpHeaders.Values.MULTIPART_FORM_DATA);
+            }
 
             Attribute filenameAttribute = currentFieldAttributes
                     .get(HttpPostBodyUtil.FILENAME);
             Attribute nameAttribute = currentFieldAttributes
                     .get(HttpPostBodyUtil.NAME);
-            Attribute contentTypeAttribute = currentFieldAttributes
-                    .get(HttpHeaders.Names.CONTENT_TYPE);
-            if (contentTypeAttribute != null) {
-                try {
-                    contentType = contentTypeAttribute.getValue();
-                } catch (IOException e) {
-                    throw new ErrorDataDecoderException(e);
-                }
-            }
             Attribute lengthAttribute = currentFieldAttributes
                     .get(HttpHeaders.Names.CONTENT_LENGTH);
             long size;
@@ -1161,7 +1163,7 @@ public class HttpPostRequestDecoder {
                 currentFileUpload = factory.createFileUpload(
                         request,
                         cleanString(nameAttribute.getValue()), cleanString(filenameAttribute.getValue()),
-                        contentType, mechanism.value(),
+                        contentTypeAttribute.getValue(), mechanism.value(),
                         localCharset, size);
             } catch (NullPointerException e) {
                 throw new ErrorDataDecoderException(e);
