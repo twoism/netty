@@ -35,7 +35,7 @@ public final class StringUtil {
         final boolean isQuoted = value.indexOf("\"") == 0 && value.lastIndexOf("\"") == value.length() - 1;
 
         if (isQuoted) {
-            return value.substring(1, value.length()-1);
+            return value.substring(1, value.length() - 1);
         } else {
             return value;
         }

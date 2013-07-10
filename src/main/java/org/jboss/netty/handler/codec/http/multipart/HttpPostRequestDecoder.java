@@ -259,10 +259,11 @@ public class HttpPostRequestDecoder {
                 headerContentType[1].toLowerCase().startsWith(
                         HttpHeaders.Values.BOUNDARY)) {
             String[] boundary = StringUtil.split(headerContentType[1], '=');
+            System.out.println("********************************************************************************");
             if (boundary.length < 2) {
                 throw new ErrorDataDecoderException("Needs a boundary value");
             }
-            multipartDataBoundary = "--" + extractFirstBoundary(boundary[1]);
+            multipartDataBoundary = "--" + extractFirstBoundary(boundary[boundary.length - 1]);
             isMultipart = true;
             currentStatus = MultiPartStatus.HEADERDELIMITER;
         } else {
@@ -271,12 +272,15 @@ public class HttpPostRequestDecoder {
     }
 
     private String extractFirstBoundary(String boundary) {
+        // multipart/form-data; boundary=0xN0b0dy_lik3s_a_mim3__AKhSmhMrH,multipart/form-data; boundary=c
         final boolean hasMultipleBoundaries = boundary.indexOf(";") != -1;
 
         if (hasMultipleBoundaries) {
-            String firstBoundary = StringUtil.split(boundary, ';')[0];
+            String[] boundaries = StringUtil.split(boundary, ';');
 
-            return StringUtil.trimQuotes(firstBoundary);
+            String lastBoundary = boundaries[boundaries.length - 1];
+
+            return StringUtil.trimQuotes(lastBoundary);
         } else {
             return StringUtil.trimQuotes(boundary);
         }
@@ -976,8 +980,10 @@ public class HttpPostRequestDecoder {
 
                             // See http://www.w3.org/Protocols/rfc2616/rfc2616-sec19.html
                             if (HttpPostBodyUtil.FILENAME.equals(name)) {
-                                // filename value is quoted string so strip them
-                                value = value.substring(1, value.length() - 1);
+                                // filename value is sometimes quoted string so strip them if needed
+                                if (value.indexOf("\"") != -1) {
+                                    value = value.substring(1, value.length() - 1);
+                                }
                             } else {
                                 // otherwise we need to clean the value
                                 value = cleanString(value);
@@ -1143,15 +1149,20 @@ public class HttpPostRequestDecoder {
             }
         }
         if (currentFileUpload == null) {
+            String contentType = HttpHeaders.Values.MULTIPART_FORM_DATA;
+
             Attribute filenameAttribute = currentFieldAttributes
                     .get(HttpPostBodyUtil.FILENAME);
             Attribute nameAttribute = currentFieldAttributes
                     .get(HttpPostBodyUtil.NAME);
             Attribute contentTypeAttribute = currentFieldAttributes
                     .get(HttpHeaders.Names.CONTENT_TYPE);
-            if (contentTypeAttribute == null) {
-                throw new ErrorDataDecoderException(
-                        "Content-Type is absent but required");
+            if (contentTypeAttribute != null) {
+                try {
+                    contentType = contentTypeAttribute.getValue();
+                } catch (IOException e) {
+                    throw new ErrorDataDecoderException(e);
+                }
             }
             Attribute lengthAttribute = currentFieldAttributes
                     .get(HttpHeaders.Names.CONTENT_LENGTH);
@@ -1168,7 +1179,7 @@ public class HttpPostRequestDecoder {
                 currentFileUpload = factory.createFileUpload(
                         request,
                         cleanString(nameAttribute.getValue()), cleanString(filenameAttribute.getValue()),
-                        contentTypeAttribute.getValue(), mechanism.value(),
+                        contentType, mechanism.value(),
                         localCharset, size);
             } catch (NullPointerException e) {
                 throw new ErrorDataDecoderException(e);

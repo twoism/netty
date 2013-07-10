@@ -114,12 +114,14 @@ public class HttpPostRequestDecoderTest {
 
     @Test
     public void testFullHttpRequestUploadWithDoubleBoundary() throws Exception {
-        final String boundary = "dLV9Wyq26L_-JQxk6ferf-RT153LhOO";
+        final String boundary = "com.aTeBiTs.TwEeTiE.oeunht43353r4cg345nt";
 
         final DefaultHttpRequest req = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST, "http://localhost");
 
         req.setContent(ChannelBuffers.EMPTY_BUFFER);
-        req.setHeader(HttpHeaders.Names.CONTENT_TYPE, "multipart/form-data; boundary=\"" + boundary + "\"; boundary=double_boundary");
+        // content-type: multipart/form-data; boundary=0xN0b0dy_lik3s_a_mim3__AKhSmhMrH,multipart/form-data; boundary=com.aTeBiTs.TwEeTiE.oeunht43353r4cg345nt
+        req.setHeader(HttpHeaders.Names.CONTENT_TYPE,
+                "multipart/form-data; boundary=0xN0b0dy_lik3s_a_mim3__AKhSmhMrH,multipart/form-data; boundary=" + boundary);
         req.setHeader(HttpHeaders.Names.TRANSFER_ENCODING, HttpHeaders.Values.CHUNKED);
         req.setChunked(true);
 
