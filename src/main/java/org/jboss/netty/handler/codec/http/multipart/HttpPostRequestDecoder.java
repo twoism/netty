@@ -259,30 +259,14 @@ public class HttpPostRequestDecoder {
                 headerContentType[1].toLowerCase().startsWith(
                         HttpHeaders.Values.BOUNDARY)) {
             String[] boundary = StringUtil.split(headerContentType[1], '=');
-            System.out.println("********************************************************************************");
             if (boundary.length < 2) {
                 throw new ErrorDataDecoderException("Needs a boundary value");
             }
-            multipartDataBoundary = "--" + extractFirstBoundary(boundary[boundary.length - 1]);
+            multipartDataBoundary = "--" + StringUtil.trimQuotes(boundary[boundary.length - 1]);
             isMultipart = true;
             currentStatus = MultiPartStatus.HEADERDELIMITER;
         } else {
             isMultipart = false;
-        }
-    }
-
-    private String extractFirstBoundary(String boundary) {
-        // multipart/form-data; boundary=0xN0b0dy_lik3s_a_mim3__AKhSmhMrH,multipart/form-data; boundary=c
-        final boolean hasMultipleBoundaries = boundary.indexOf(";") != -1;
-
-        if (hasMultipleBoundaries) {
-            String[] boundaries = StringUtil.split(boundary, ';');
-
-            String lastBoundary = boundaries[boundaries.length - 1];
-
-            return StringUtil.trimQuotes(lastBoundary);
-        } else {
-            return StringUtil.trimQuotes(boundary);
         }
     }
 
@@ -980,10 +964,8 @@ public class HttpPostRequestDecoder {
 
                             // See http://www.w3.org/Protocols/rfc2616/rfc2616-sec19.html
                             if (HttpPostBodyUtil.FILENAME.equals(name)) {
-                                // filename value is sometimes quoted string so strip them if needed
-                                if (value.indexOf("\"") != -1) {
-                                    value = value.substring(1, value.length() - 1);
-                                }
+                                // filename value is sometimes a quoted string so strip them if needed
+                                value = StringUtil.trimQuotes(value);
                             } else {
                                 // otherwise we need to clean the value
                                 value = cleanString(value);

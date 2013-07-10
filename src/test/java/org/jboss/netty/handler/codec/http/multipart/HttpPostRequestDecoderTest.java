@@ -113,7 +113,7 @@ public class HttpPostRequestDecoderTest {
     }
 
     @Test
-    public void testFullHttpRequestUploadWithDoubleBoundary() throws Exception {
+    public void testFullHttpRequestUploadWithDoubleBoundaryAndUnquotedFilename() throws Exception {
         final String boundary = "com.aTeBiTs.TwEeTiE.oeunht43353r4cg345nt";
 
         final DefaultHttpRequest req = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST, "http://localhost");
@@ -131,7 +131,7 @@ public class HttpPostRequestDecoderTest {
         for (String data : Arrays.asList("", "\r", "\r\r", "\r\r\r")) {
             final String body =
                     "--" + boundary + "\r\n" +
-                            "Content-Disposition: form-data; name=\"file\"; filename=\"tmp-0.txt\"\r\n" +
+                            "Content-Disposition: form-data; name=\"file\"; filename=tmp-0.txt\r\n" +
                             "Content-Type: image/gif\r\n" +
                             "\r\n" +
                             data + "\r\n" +
